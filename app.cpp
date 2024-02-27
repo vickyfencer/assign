@@ -14,7 +14,7 @@ public:
     // Function to read and display the current time from the RTC
     void readAndDisplayTime() {
         // Read the current time registers from the RTC (assuming RTC registers are known)
-        unsigned char* timeRegisters = readRegisters(7); // Assuming 7 registers for hours, minutes, seconds, etc.
+        unsigned char* timeRegisters = readRegisters(7, 0x00); // Assuming 7 registers for hours, minutes, seconds, etc.
 
         // Display the current time
         std::cout << "Current Time: ";

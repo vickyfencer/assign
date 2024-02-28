@@ -28,7 +28,7 @@ public:
     }
 
     // Function to set hours on the RTC
-    void setHours(unsigned char hours) {
+    void setHours(unsigned char hours\) {
         // Write the hours value to the appropriate register on the RTC
         writeRegister(0x02, hours); // Assuming register 0x02 holds the hours information
     }
@@ -54,14 +54,14 @@ int main() {
 
     // Open the I2C device
     rtc.open();
-
+ // Read and display the updated time from the RTC
+    rtc.readAndDisplayTime();
     // Set hours, minutes, and seconds (for example)
     rtc.setHours(12);
     rtc.setMinutes(30);
     rtc.setSeconds(45);
 
-    // Read and display the updated time from the RTC
-    rtc.readAndDisplayTime();
+   
 
     // Close the I2C device
     rtc.close();

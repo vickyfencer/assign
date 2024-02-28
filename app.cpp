@@ -15,13 +15,12 @@ public:
     void readAndDisplayTime() {
         // Read the current time registers from the RTC (assuming RTC registers are known)
         unsigned char* timeRegisters_1 = readRegisters(7, 0x00); // Assuming 7 registers for hours, minutes, seconds, etc.
- unsigned char* timeRegisters_2 = readRegisters(7, 0x01);
-  unsigned char* timeRegisters_3 = readRegisters(7, 0x02);
+
         // Display the current time
         std::cout << "Current Time: ";
-        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters_1[2]) << ":"; // hours
-        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters_2[1]) << ":"; // minutes
-        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters_3[0]);         // seconds
+        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters[2]) << ":"; // hours
+        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters[1]) << ":"; // minutes
+        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters[0]);         // seconds
         std::cout << std::endl;
 
         // Clean up dynamically allocated memory

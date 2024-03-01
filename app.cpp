@@ -1,70 +1,91 @@
-#include <stdio.h>
 #include <iostream>
-#include <iomanip>
 #include "I2CDevice.h"
 
 namespace EE513 {
 
-// Derived class for the RTC module
-class RTCModule : public I2CDevice {
+class DS3231 : public I2CDevice {
 public:
-    // Constructor inheriting from the base class constructor
-    RTCModule(unsigned int bus, unsigned int device) : I2CDevice(bus, device) {}
+    DS3231(unsigned int bus, unsigned int device) : I2CDevice(bus, device) {}
 
-    // Function to read and display the current time from the RTC
-    void readAndDisplayTime() {
-        // Read the current time registers from the RTC (assuming RTC registers are known)
-        unsigned char* timeRegisters_1 = readRegisters(7, 0x00); // Assuming 7 registers for hours, minutes, seconds, etc.
-
-        // Display the current time
-        std::cout << "Current Time: ";
-        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters[2]) << ":"; // hours
-        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters[1]) << ":"; // minutes
-        std::cout << std::setfill('0') << std::setw(2) << static_cast<int>(timeRegisters[0]);         // seconds
-        std::cout << std::endl;
-
-        // Clean up dynamically allocated memory
-        delete[] timeRegisters;
+    // Read and display the current RTC module time and date
+    void readAndDisplayTimeDate() {
+        unsigned char *timeDate = readRegisters(7, 0x00); // Read time and date registers starting from address 0x00
+        // Parse time and date values
+        int seconds = bcdToDec(timeDate[0]& 0x7F); // Masking to ignore CH bit
+        int minutes = bcdToDec(timeDate[1]& 0X7F);
+        int hours = bcdToDec(timeDate[2] & 0x3F); // Masking to ignore 12/24 hour bit
+        int day = bcdToDec(timeDate[3]) & 0X07;
+        int date = bcdToDec(timeDate[4])& 0X3F;
+        int month = bcdToDec(timeDate[5] & 0x1F); // Masking to ignore century bit
+        int year = bcdToDec(timeDate[6]);
+        // Display time and date
+        std::cout << "Time: " << hours << ":" << minutes << ":" << seconds << std::endl;
+        std::cout << "Date: " << year << "-" << month << "-" << date << " Day: " << day << std::endl;
     }
 
-    // Function to set hours on the RTC
-    void setHours(unsigned char hours\) {
-        // Write the hours value to the appropriate register on the RTC
-        writeRegister(0x02, hours); // Assuming register 0x02 holds the hours information
+    // Read and display the current temperature
+    void readAndDisplayTemperature() {
+        unsigned char tempMSB = readRegister(0x11);
+        unsigned char tempLSB = readRegister(0x12);
+        int tempInteger = (int)tempMSB;
+        if (tempMSB & 0x80) { // Check if temperature is negative
+            tempInteger -= 256;
+        }
+        float tempFraction = (float)(tempLSB >> 6) * 0.25;
+        float temperature = tempInteger + tempFraction;
+        std::cout << "Temperature: " << temperature << "°C" << std::endl;
     }
 
-    // Function to set minutes on the RTC
-    void setMinutes(unsigned char minutes) {
-        // Write the minutes value to the appropriate register on the RTC
-        writeRegister(0x01, minutes); // Assuming register 0x01 holds the minutes information
+    void setTimeDate(int year, int month, int date, int day, int hours, int minutes, int seconds) {
+    // Convert decimal values to BCD
+    unsigned char timeDate[7];
+    timeDate[0] = decToBcd(seconds);
+    timeDate[1] = decToBcd(minutes);
+    timeDate[2] = decToBcd(hours);
+    timeDate[3] = decToBcd(day);
+    timeDate[4] = decToBcd(date);
+    timeDate[5] = decToBcd(month);
+    timeDate[6] = decToBcd(year);
+
+for (int i = 0; i < 7; ++i) {
+        writeRegister(i, timeDate[i]);
+    } 
+}
+
+
+private:
+    // Helper function to convert binary coded decimal (BCD) to decimal
+    int bcdToDec(unsigned char bcd) {
+        return ((bcd >> 4) * 10) + (bcd & 0x0F);
     }
 
-    // Function to set seconds on the RTC
-    void setSeconds(unsigned char seconds) {
-        // Write the seconds value to the appropriate register on the RTC
-        writeRegister(0x00, seconds); // Assuming register 0x00 holds the seconds information
+    // Helper function to convert decimal to binary coded decimal (BCD)
+    unsigned char decToBcd(int dec) {
+        return ((dec / 10) << 4) | (dec % 10);
     }
 };
 
-} // namespace EE513
+} /* namespace EE513 */
 
 int main() {
-    // Create an instance of the RTCModule class
-    EE513::RTCModule rtc(1, 0x68); // Example bus number and device address (modify as per your setup)
+    // Initialize DS3231 object with the appropriate bus and device numbers
+    EE513::DS3231 rtc(1, 0x68);
 
-    // Open the I2C device
-    rtc.open();
- // Read and display the updated time from the RTC
-    rtc.readAndDisplayTime();
-    // Set hours, minutes, and seconds (for example)
-    rtc.setHours(12);
-    rtc.setMinutes(30);
-    rtc.setSeconds(45);
+    // Read and display the current time and date
+    std::cout << "Current Time and Date:" << std::endl;
+    rtc.readAndDisplayTimeDate();
 
-   
+    // Read and display the current temperature
+    std::cout << "Current Temperature:" << std::endl;
+    rtc.readAndDisplayTemperature();
 
-    // Close the I2C device
-    rtc.close();
+    // Set a new time and date (e.g., February 28, 2024, 15:30:00, Wednesday)
+   rtc.setTimeDate(2024, 2, 28, 3, 15, 30, 0);
+
+    // Verify the new time and date has been set
+ std::cout << "New Time and Date:" << std::endl;
+  rtc.readAndDisplayTimeDate();
 
     return 0;
 }
+
